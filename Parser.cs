@@ -19,7 +19,7 @@ namespace Julyee.JSON
 
         public delegate void ParseHandler(Operationtype operation, string content, int depth);
 
-        internal static void Parse(string jsonString, ParseHandler handler)
+        public static void Parse(string jsonString, ParseHandler handler)
         {
             Reader reader = new Reader(jsonString);
             StringBuilder builder = new StringBuilder();
