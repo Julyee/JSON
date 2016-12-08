@@ -11,7 +11,7 @@ namespace Julyee.JSON
         /// <summary>
         /// Enum describing the possible operations found during parsing.
         /// </summary>
-        public enum Operationtype
+        public enum OperationType
         {
             /// <summary>
             /// Object opening tag found: "{"
@@ -54,7 +54,7 @@ namespace Julyee.JSON
         /// <param name="operation">The operation type found by the parser, see OperationType for more info</param>
         /// <param name="content">A string containing the content found during the operation parsing, can be a control character</param>
         /// <param name="depth">How many levels into the JSON hierarchy was the operation performed</param>
-        public delegate void ParseHandler(Operationtype operation, string content, int depth);
+        public delegate void ParseHandler(OperationType operation, string content, int depth);
 
         /// <summary>
         /// Parses a JSON string sequentially and invokes the provided handler on every operation performed.
@@ -93,7 +93,7 @@ namespace Julyee.JSON
         /// <exception cref="Exception">If an error is encountered while parsing the JSON data this exception is thrown</exception>
         private static void ParseObject(Reader reader, StringBuilder builder, ParseHandler handler, int depth)
         {
-            handler(Operationtype.ObjecStart, "{", depth);
+            handler(OperationType.ObjecStart, "{", depth);
 
             char controlChar = reader.GetNextCharacterNoWhiteSpaceSafe();
 
@@ -105,7 +105,7 @@ namespace Julyee.JSON
                 }
 
                 string key = reader.ReadString(builder);
-                handler(Operationtype.Key, key, depth);
+                handler(OperationType.Key, key, depth);
 
                 controlChar = reader.GetNextCharacterNoWhiteSpaceSafe();
                 if (controlChar != ':')
@@ -128,14 +128,14 @@ namespace Julyee.JSON
                     else if (controlChar == '\"')
                     {
                         string value = reader.ReadString(builder);
-                        handler(Operationtype.StringValue, value, depth);
+                        handler(OperationType.StringValue, value, depth);
                     }
                 }
                 else
                 {
                     builder.Append(controlChar);
                     string value = reader.ReadValue(builder);
-                    handler(Operationtype.LiteralValue, value, depth);
+                    handler(OperationType.LiteralValue, value, depth);
                 }
 
                 builder.Length = 0;
@@ -144,7 +144,7 @@ namespace Julyee.JSON
                 if (controlChar == ',')
                 {
                     controlChar = reader.GetNextCharacterNoWhiteSpaceSafe();
-                    handler(Operationtype.AppendSibling, ",", depth);
+                    handler(OperationType.AppendSibling, ",", depth);
                 }
                 else if (controlChar != '}')
                 {
@@ -152,7 +152,7 @@ namespace Julyee.JSON
                 }
             }
 
-            handler(Operationtype.ObjectEnd, "}", depth);
+            handler(OperationType.ObjectEnd, "}", depth);
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace Julyee.JSON
         /// <exception cref="Exception">If an error is encountered while parsing the JSON data this exception is thrown</exception>
         private static void ParseArray(Reader reader, StringBuilder builder, ParseHandler handler, int depth)
         {
-            handler(Operationtype.ArrayStart, "[", depth);
+            handler(OperationType.ArrayStart, "[", depth);
 
             char controlChar = reader.GetNextCharacterNoWhiteSpaceSafe();
 
@@ -184,14 +184,14 @@ namespace Julyee.JSON
                     else if (controlChar == '\"')
                     {
                         string value = reader.ReadString(builder);
-                        handler(Operationtype.StringValue, value, depth);
+                        handler(OperationType.StringValue, value, depth);
                     }
                 }
                 else
                 {
                     builder.Append(controlChar);
                     string value = reader.ReadValue(builder);
-                    handler(Operationtype.LiteralValue, value, depth);
+                    handler(OperationType.LiteralValue, value, depth);
                 }
 
                 builder.Length = 0;
@@ -200,7 +200,7 @@ namespace Julyee.JSON
                 if (controlChar == ',')
                 {
                     controlChar = reader.GetNextCharacterNoWhiteSpaceSafe();
-                    handler(Operationtype.AppendSibling, ",", depth);
+                    handler(OperationType.AppendSibling, ",", depth);
                 }
                 else if (controlChar != ']')
                 {
@@ -208,7 +208,7 @@ namespace Julyee.JSON
                 }
             }
 
-            handler(Operationtype.ArrayEnd, "]", depth);
+            handler(OperationType.ArrayEnd, "]", depth);
         }
     }
 }
