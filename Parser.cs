@@ -6,7 +6,7 @@ namespace Julyee.JSON
     /// <summary>
     /// Super simple and fast sequential JSON parser. Uses only static methods.
     /// </summary>
-    public class Parser
+    public static class Parser
     {
         /// <summary>
         /// Enum describing the possible operations found during parsing.

@@ -6,7 +6,7 @@ namespace Julyee.JSON
     /// Utility class that parses a JSON string into a tree of Dictionaries and Lists
     /// where all the values, including literal values, are parsed as strings.
     /// </summary>
-    public class ParserSimple
+    public static class ParserSimple
     {
         /// <summary>
         /// Parses a JSON string and returns an object representing the root of the parsed tree.
