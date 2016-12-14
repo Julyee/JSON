@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using ParseValueFunc = System.Func<Julyee.JSON.Parser.OperationType, string, object>;
+using AddToCurrentFunc = System.Func<object, string, object, string>;
 
 namespace Julyee.JSON
 {
@@ -14,6 +17,17 @@ namespace Julyee.JSON
         /// <param name="jsonString">The JSON string to parse.</param>
         /// <returns>Either a Dictionatyor a List representing the root of the parsed JSON structure</returns>
         public static object Parse(string jsonString)
+        {
+            return _Parse(jsonString, (operation, value) => value);
+        }
+
+        /// <summary>
+        /// Parses a JSON string, using the provided delegate, and returns an object representing the root of the parsed tree.
+        /// </summary>
+        /// <param name="jsonString">The JSON string to parse.</param>
+        /// <param name="parseValue">Delegate method to parse a value, literal or string.</param>
+        /// <returns></returns>
+        internal static object _Parse(string jsonString, ParseValueFunc parseValue)
         {
             object current = null;
             string key = null;
@@ -61,7 +75,7 @@ namespace Julyee.JSON
 
                     case Parser.OperationType.StringValue:
                     case Parser.OperationType.LiteralValue:
-                        key = _AddToCurrent(current, key, content);
+                        key = _AddToCurrent(current, key, parseValue(operation, content));
                         break;
                 }
             });
