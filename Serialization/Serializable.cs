@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
-namespace Julyee.JSON
+namespace Julyee.JSON.Serialization
 {
     /// <summary>
     /// Attribute class used to make classes serializable for use with the JSON parser.

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Julyee.JSON
+namespace Julyee.JSON.Serialization
 {
     /// <summary>
     /// Simple utility class used to skip properties/fields during serialization.

@@ -2,10 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using UnityEngine;
 using ParsableKeys = System.Collections.Generic.Dictionary<string, System.Reflection.MemberInfo>;
 
-namespace Julyee.JSON
+namespace Julyee.JSON.Serialization
 {
     public static class Deserializer
     {

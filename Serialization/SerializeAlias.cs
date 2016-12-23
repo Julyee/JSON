@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace Julyee.JSON
+namespace Julyee.JSON.Serialization
 {
     /// <summary>
     /// Attribute used to provide a serialization alias for class fields and properties. Useful when writing/parsing JSON
