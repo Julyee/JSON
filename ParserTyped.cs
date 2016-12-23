@@ -67,7 +67,7 @@ namespace Julyee.JSON
         /// </summary>
         /// <param name="candidate">The string to check.</param>
         /// <returns>Wheter the string is an integer or not</returns>
-        private static bool _IsInt(string candidate)
+        public static bool _IsInt(string candidate)
         {
             foreach (char c in candidate)
             {
