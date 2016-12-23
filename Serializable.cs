@@ -100,7 +100,7 @@ namespace Julyee.JSON
                     PropertyInfo[] properties = type.GetProperties();
                     for (int i = 0; i < properties.Length; ++i)
                     {
-                        if (CanBeSerialized(properties[i]))
+                        if (CanBeSerialized(properties[i]) && properties[i].GetSetMethod() != null)
                         {
                             result.Add(GetSerializationName(properties[i]), properties[i]);
                         }
