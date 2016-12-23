@@ -85,7 +85,7 @@ namespace Julyee.JSON
             {
                 if (serializable.SerializeFields)
                 {
-                    FieldInfo[] fields = type.GetFields();
+                    FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     for (int i = 0; i < fields.Length; ++i)
                     {
                         if (CanBeSerialized(fields[i]))
