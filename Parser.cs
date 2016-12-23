@@ -93,7 +93,7 @@ namespace Julyee.JSON
         /// <exception cref="Exception">If an error is encountered while parsing the JSON data this exception is thrown</exception>
         private static void ParseObject(Reader reader, StringBuilder builder, ParseHandler handler, int depth)
         {
-            handler(OperationType.ObjecStart, "{", depth);
+            handler(OperationType.ObjecStart, "{", depth++);
 
             char controlChar = reader.GetNextCharacterNoWhiteSpaceSafe();
 
@@ -119,11 +119,11 @@ namespace Julyee.JSON
                 {
                     if (controlChar == '{')
                     {
-                        ParseObject(reader, builder, handler, depth + 1);
+                        ParseObject(reader, builder, handler, depth);
                     }
                     else if (controlChar == '[')
                     {
-                        ParseArray(reader, builder, handler, depth + 1);
+                        ParseArray(reader, builder, handler, depth);
                     }
                     else if (controlChar == '\"')
                     {
@@ -152,7 +152,7 @@ namespace Julyee.JSON
                 }
             }
 
-            handler(OperationType.ObjectEnd, "}", depth);
+            handler(OperationType.ObjectEnd, "}", depth--);
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace Julyee.JSON
         /// <exception cref="Exception">If an error is encountered while parsing the JSON data this exception is thrown</exception>
         private static void ParseArray(Reader reader, StringBuilder builder, ParseHandler handler, int depth)
         {
-            handler(OperationType.ArrayStart, "[", depth);
+            handler(OperationType.ArrayStart, "[", depth++);
 
             char controlChar = reader.GetNextCharacterNoWhiteSpaceSafe();
 
@@ -175,11 +175,11 @@ namespace Julyee.JSON
                 {
                     if (controlChar == '{')
                     {
-                        ParseObject(reader, builder, handler, depth + 1);
+                        ParseObject(reader, builder, handler, depth);
                     }
                     else if (controlChar == '[')
                     {
-                        ParseArray(reader, builder, handler, depth + 1);
+                        ParseArray(reader, builder, handler, depth);
                     }
                     else if (controlChar == '\"')
                     {
@@ -208,7 +208,7 @@ namespace Julyee.JSON
                 }
             }
 
-            handler(OperationType.ArrayEnd, "]", depth);
+            handler(OperationType.ArrayEnd, "]", depth--);
         }
     }
 }
