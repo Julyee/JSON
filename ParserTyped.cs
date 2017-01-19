@@ -12,7 +12,7 @@ namespace Julyee.JSON
         /// Parses a JSON string and returns an object representing the root of the parsed tree.
         /// </summary>
         /// <param name="jsonString">The JSON string to parse.</param>
-        /// <returns>Either a Dictionatyor a List representing the root of the parsed JSON structure</returns>
+        /// <returns>Either a Dictionaty or a List representing the root of the parsed JSON structure</returns>
         public static object Parse(string jsonString)
         {
             return ParserSimple._Parse(jsonString, _ParseValue);
@@ -69,8 +69,9 @@ namespace Julyee.JSON
         /// <returns>Wheter the string is an integer or not</returns>
         public static bool _IsInt(string candidate)
         {
-            foreach (char c in candidate)
+            for (int i = candidate[0] == '-' ? 1 : 0; i < candidate.Length; ++i)
             {
+                char c = candidate[i];
                 if (c < '0' || c > '9')
                     return false;
             }
