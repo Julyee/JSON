@@ -6,8 +6,20 @@ using ParsableKeys = System.Collections.Generic.Dictionary<string, System.Reflec
 
 namespace Julyee.JSON.Serialization
 {
+    /// <summary>
+    /// Parser static class used to deserialize objects, it calls the default constructor of the deserialized objects and
+    /// sets their values through fields and properties. Cannot call non-default constructors.
+    /// </summary>
     public static class Deserializer
     {
+        /// <summary>
+        /// This function parses the given JSON string and tries to deserialize an object of the given type.
+        /// If the JSON string contains nested objects, this function looks for equivaent deserializable classes within
+        /// the fields and properties of the original class.
+        /// </summary>
+        /// <param name="jsonString">The JSON string to parse.</param>
+        /// <typeparam name="T">The root type to deserialize, must have the Serializable attribute.</typeparam>
+        /// <returns>An instance of the specified type with the deserialized data.</returns>
         public static T Parse<T>(string jsonString)
         {
             Type type = typeof(T);
@@ -44,7 +56,7 @@ namespace Julyee.JSON.Serialization
                                 properties = Serializable.GetSerializablePairs(type);
                                 objectStack.Push(processing);
                             }
-                            else if (member != null)
+                            else if (member != null && processing != null && !_isList(processing))
                             {
                                 Type objectType = _getMemberType(member);
                                 if (objectType != null)
@@ -62,11 +74,11 @@ namespace Julyee.JSON.Serialization
                             {
                                 if (processing == null)
                                 {
-                                    processing = _instantiateList<object>(processing, member, objectStack);
+                                    processing = _instantiateList(processing, member, objectStack);
                                     member = null;
                                 }
 
-                                if (processing.GetType() == typeof(List<>))
+                                if (_isList(processing))
                                 {
                                     Type objectType = processing.GetType().GetGenericArguments()[0];
                                     if (objectType != null)
@@ -85,12 +97,12 @@ namespace Julyee.JSON.Serialization
 
                         case Parser.OperationType.ArrayStart:
                             Type processingType = processing.GetType();
-                            if (processingType != typeof(List<>) && member == null)
+                            if (!_isList(processingType) && member == null)
                             {
                                 break;
                             }
 
-                            if (processingType == typeof(List<>))
+                            if (_isList(processingType))
                             {
                                 Type objectType = processing.GetType().GetGenericArguments()[0];
                                 if (objectType != null)
@@ -119,7 +131,7 @@ namespace Julyee.JSON.Serialization
                                 if (objectStack.Count > 0)
                                 {
                                     processing = objectStack.Peek();
-                                    if (processing != null && processing.GetType() != typeof(List<>))
+                                    if (processing != null && !_isList(processing))
                                     {
                                         properties = Serializable.GetSerializablePairs(processing.GetType());
                                     }
@@ -140,11 +152,11 @@ namespace Julyee.JSON.Serialization
                             {
                                 if (processing == null)
                                 {
-                                    processing = _instantiateList<object>(processing, member, objectStack);
+                                    processing = _instantiateList(processing, member, objectStack);
                                     member = null;
                                 }
 
-                                if (processing.GetType() == typeof(List<>))
+                                if (_isList(processing))
                                 {
                                     _addValue(processing, content);
                                 }
@@ -160,11 +172,11 @@ namespace Julyee.JSON.Serialization
                             {
                                 if (processing == null)
                                 {
-                                    processing = _instantiateList<object>(processing, member, objectStack);
+                                    processing = _instantiateList(processing, member, objectStack);
                                     member = null;
                                 }
 
-                                if (processing.GetType() == typeof(List<>))
+                                if (_isList(processing))
                                 {
                                     _addLiteralValue(processing, content);
                                 }
@@ -177,6 +189,13 @@ namespace Julyee.JSON.Serialization
             return instance;
         }
 
+        /// <summary>
+        /// Internal method to assign a value to an instance of an object.
+        /// </summary>
+        /// <param name="instance">The instance of the object to which the value will be assigned.</param>
+        /// <param name="member">The information of the instance's member which will hold the value.</param>
+        /// <param name="value">The value to be assigned.</param>
+        /// <typeparam name="T">The type of the value.</typeparam>
         private static void _assignValue<T>(object instance, MemberInfo member, T value)
         {
             MemberTypes type = member.MemberType;
@@ -195,6 +214,13 @@ namespace Julyee.JSON.Serialization
             }
         }
 
+        /// <summary>
+        /// Private method to assign a JSON literal value (string, boolean, number, null)
+        /// </summary>
+        /// <param name="instance">The instance of the object to which the value will be assigned.</param>
+        /// <param name="member">The information of the instance's member which will hold the value.</param>
+        /// <param name="value">String representation of the vaue to be assigned.</param>
+        /// <exception cref="Exception">Thrown if the passed string cannot be parsed as a literal value.</exception>
         private static void _assignLiteralValue(object instance, MemberInfo member, string value)
         {
             if (value == "null")
@@ -211,14 +237,30 @@ namespace Julyee.JSON.Serialization
             }
             else if (ParserTyped._IsInt(value))
             {
-                _assignValue(instance, member, int.Parse(value));
+                /* cast to float if needed */
+                if (_getMemberType(member) == typeof(float))
+                {
+                    _assignValue(instance, member, float.Parse(value));
+                }
+                else
+                {
+                    _assignValue(instance, member, int.Parse(value));
+                }
             }
             else
             {
                 float f;
                 if (float.TryParse(value, out f))
                 {
-                    _assignValue(instance, member, f);
+                    /* cast to int if needed */
+                    if (_getMemberType(member) == typeof(int))
+                    {
+                        _assignValue(instance, member, (int) f);
+                    }
+                    else
+                    {
+                        _assignValue(instance, member, f);
+                    }
                 }
                 else
                 {
@@ -227,14 +269,27 @@ namespace Julyee.JSON.Serialization
             }
         }
 
+        /// <summary>
+        /// Private method that adds the given value to the specified list instance.
+        /// </summary>
+        /// <param name="instance">An instance of an object that implements IList</param>
+        /// <param name="value">The value to add to the list</param>
+        /// <typeparam name="T">The type of the value</typeparam>
         private static void _addValue<T>(object instance, T value)
         {
-            List<T> list = (List<T>) instance;
+            IList list = (IList) instance;
             list.Add(value);
         }
 
+        /// <summary>
+        /// Private method that adds a literal value to the specified list instance.
+        /// </summary>
+        /// <param name="instance">An instance of an object that implements IList</param>
+        /// <param name="value">String representation of a literal value.</param>
+        /// <exception cref="Exception">Thrown if the passed string cannot be parsed as a literal value.</exception>
         private static void _addLiteralValue(object instance, string value)
         {
+
             if (value == "null")
             {
                 _addValue<object>(instance, null);
@@ -247,16 +302,32 @@ namespace Julyee.JSON.Serialization
             {
                 _addValue(instance, false);
             }
-            else if (ParserTyped._IsInt(value))
+            if (ParserTyped._IsInt(value))
             {
-                _addValue(instance, int.Parse(value));
+                /* cast to float if needed */
+                if (_getListItemType(instance) == typeof(float))
+                {
+                    _addValue(instance, float.Parse(value));
+                }
+                else
+                {
+                    _addValue(instance, int.Parse(value));
+                }
             }
             else
             {
                 float f;
                 if (float.TryParse(value, out f))
                 {
-                    _addValue(instance, f);
+                    /* cast to int if needed */
+                    if (_getListItemType(instance) == typeof(int))
+                    {
+                        _addValue(instance, (int) f);
+                    }
+                    else
+                    {
+                        _addValue(instance, f);
+                    }
                 }
                 else
                 {
@@ -265,6 +336,12 @@ namespace Julyee.JSON.Serialization
             }
         }
 
+        /// <summary>
+        /// Private method to get the type of an object's member based on its info.
+        /// </summary>
+        /// <param name="member">The member info from which the type will be extracted</param>
+        /// <returns>The parsed type</returns>
+        /// <exception cref="ArgumentException">Thrown if the specified memeber is not a field or a property.</exception>
         private static Type _getMemberType(MemberInfo member)
         {
             switch (member.MemberType)
@@ -278,19 +355,67 @@ namespace Julyee.JSON.Serialization
             }
         }
 
+        /// <summary>
+        /// Idetifies the item type of a generic list.
+        /// </summary>
+        /// <param name="list">The list to extract the type from</param>
+        /// <returns>The item type</returns>
+        private static Type _getListItemType(object list)
+        {
+            return list.GetType().GetGenericArguments()[0];
+        }
+
+        /// <summary>
+        /// Creates a list of the given generic type.
+        /// </summary>
+        /// <param name="genericListType">The generic type of the new list.</param>
+        /// <returns>A new list</returns>
         private static IList _createList(Type genericListType)
         {
             IList instance = (IList)Activator.CreateInstance(genericListType);
             return instance;
         }
 
-        private static Type _getGenericListType(Type type)
+        /// <summary>
+        /// Returns the type of a generic list containing items of the given type.
+        /// </summary>
+        /// <param name="type">The type of the items in the list.</param>
+        /// <returns>A generic list type.</returns>
+        private static Type _genericListType(Type type)
         {
             Type listType = typeof(List<>);
             return listType.MakeGenericType(type);
         }
 
-        private static object _instantiateList<T>(object processing, MemberInfo member, Stack<object> stack)
+        /// <summary>
+        /// Checks if the given object is a generic list.
+        /// </summary>
+        /// <param name="obj">The object to check</param>
+        /// <returns>Whether or not the object is a list</returns>
+        private static bool _isList(object obj)
+        {
+            return _isList(obj.GetType());
+        }
+
+        /// <summary>
+        /// Checks if the given type pertains to a generic list.
+        /// </summary>
+        /// <param name="type">The type to check</param>
+        /// <returns>Whether or not the type is that of a generic list.</returns>
+        private static bool _isList(Type type)
+        {
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>);
+        }
+
+        /// <summary>
+        /// Private method to instantiate and add a list to an object during JSON parsing.
+        /// </summary>
+        /// <param name="processing">The current object being processed by the parser</param>
+        /// <param name="member">The current object member being processed by the parser</param>
+        /// <param name="stack">The object stack of the parser.</param>
+        /// <returns>The object that the parser should continue processing afterthe operation.</returns>
+        /// <exception cref="ArgumentException">Thrown if nothing is being processed and no member is specified.</exception>
+        private static object _instantiateList(object processing, MemberInfo member, Stack<object> stack)
         {
             if (processing == null)
             {
@@ -299,7 +424,13 @@ namespace Julyee.JSON.Serialization
                     throw new ArgumentException("Input MemberInfo cannot be null");
                 }
 
-                Type lastListType = _getGenericListType(typeof(T));
+                Type type = _getMemberType(member);
+                while (_isList(type))
+                {
+                    type = type.GetGenericArguments()[0];
+                }
+
+                Type lastListType = _genericListType(type);
                 processing = _createList(lastListType);
                 stack.Pop();
 
@@ -308,7 +439,7 @@ namespace Julyee.JSON.Serialization
 
                 while (stack.Peek() == null)
                 {
-                    lastListType = _getGenericListType(lastListType);
+                    lastListType = _genericListType(lastListType);
                     IList newList = _createList(lastListType);
                     newList.Add(toPush.Peek());
                     toPush.Push(newList);
